@@ -31,8 +31,7 @@ MODEL_PROVIDERS: list[dict] = [
         "base_url_env": "DASHSCOPE_BASE_URL",
         "default_base_url": "https://api-inference.modelscope.cn/v1/",
         "models": [
-            "deepseek-ai/DeepSeek-V4-Pro",
-            "deepseek-ai/DeepSeek-V4-Flash"
+            "deepseek-ai/DeepSeek-V4.1-Flash"
         ],
     },
     {
@@ -41,7 +40,7 @@ MODEL_PROVIDERS: list[dict] = [
         "base_url_env": "DEEPSEEK_BASE_URL",
         "default_base_url": "https://api.deepseek.com/v1",
         "models": [
-            "deepseek-v4-flash"
+            "deepseek-flash"
         ],
     },
     # {
