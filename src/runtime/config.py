@@ -26,24 +26,6 @@ USER_AGENT = (
 # 现的那条；这避免 Summarizer 内部按 name 索引 client 字典时被后写覆盖。
 MODEL_PROVIDERS: list[dict] = [
     {
-        "name": "ppio",
-        "api_key_env": "PPIO_API_KEY",
-        "base_url_env": "PPIO_BASE_URL",
-        "default_base_url": "https://api.ppio.com/openai/v1",
-        "models": [
-            "deepseek/deepseek-v4.1-flash"
-        ],
-    },
-    {
-        "name": "modelscope",
-        "api_key_env": "DASHSCOPE_API_KEY",
-        "base_url_env": "DASHSCOPE_BASE_URL",
-        "default_base_url": "https://api-inference.modelscope.cn/v1/",
-        "models": [
-            "deepseek-ai/DeepSeek-V4.1-Flash"
-        ],
-    },
-    {
         "name": "deepseek",
         "api_key_env": "DEEPSEEK_API_KEY",
         "base_url_env": "DEEPSEEK_BASE_URL",
@@ -52,18 +34,7 @@ MODEL_PROVIDERS: list[dict] = [
             "deepseek-flash"
         ],
     },
-    # {
-    #     "name": "modelscope",
-    #     "api_key_env": "DASHSCOPE_API_KEY",
-    #     "base_url_env": "DASHSCOPE_BASE_URL",
-    #     "default_base_url": "https://api-inference.modelscope.cn/v1/",
-    #     "models": [
-    #         "deepseek-ai/DeepSeek-V3.2",
-    #         "ZhipuAI/GLM-5",
-    #         "MiniMax/MiniMax-M2.5",
-    #         "Qwen/Qwen3.5-397B-A17B",
-    #     ],
-    # },
+
     {
         "name": "gemini",
         "api_key_env": "GEMINI_API_KEY",
@@ -75,8 +46,6 @@ MODEL_PROVIDERS: list[dict] = [
         ],
     }
 ]
-
-
 def resolve_model_providers() -> list[dict]:
     """Resolve MODEL_PROVIDERS into runtime configs.
 
