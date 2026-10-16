@@ -26,6 +26,15 @@ USER_AGENT = (
 # 现的那条；这避免 Summarizer 内部按 name 索引 client 字典时被后写覆盖。
 MODEL_PROVIDERS: list[dict] = [
     {
+        "name": "ppio",
+        "api_key_env": "PPIO_API_KEY",
+        "base_url_env": "PPIO_BASE_URL",
+        "default_base_url": "https://api.ppio.com/openai/v1",
+        "models": [
+            "deepseek/deepseek-v4.1-flash"
+        ],
+    },
+    {
         "name": "modelscope",
         "api_key_env": "DASHSCOPE_API_KEY",
         "base_url_env": "DASHSCOPE_BASE_URL",
