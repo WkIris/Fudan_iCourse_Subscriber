@@ -35,6 +35,7 @@
 |---|---|---|---|
 | `STUID` | ✅ | 复旦学号 | `22307110000` |
 | `UISPSW` | ✅ | UIS 统一身份认证密码 | `your_password` |
+| `UIS_TOTP_SECRET` | 二次验证时需要 | 已绑定的 UIS 动态口令密钥 | 留空或按下方说明配置 |
 | `COURSE_IDS` | ✅ | 要监控的课程 ID，多个用英文逗号分隔 | `35472,30251` |
 | `DASHSCOPE_API_KEY` | ⬜ | 仅在旧版数据库曾使用该值加密时填写原值 | `ms-xxxxxxxx` |
 | `DEEPSEEK_API_KEY` | ⬜ | DeepSeek API Key（推荐） | `sk-xxxxxxxx` |
@@ -44,6 +45,8 @@
 | `RECEIVER_EMAIL` | ✅ | 接收摘要邮件的邮箱 | `you@m.fudan.edu.com` |
 
 > 本仓库至少需要配置 `DEEPSEEK_API_KEY` 或 `GEMINI_API_KEY`。程序按配置顺序尝试，未设置自定义地址时使用默认地址。如需自定义供应商，在 `src/runtime/config.py` 中添加配置，并在定时检查和单次运行的工作流中显式传入对应的 `api_key_env` 和可选的 `base_url_env`。
+
+如果 iCourse 要求二次验证，请在 [复旦 UIS 账号安全页面](https://id.fudan.edu.cn/uc/#/pc/userCenter/accountSecurity) 按提示绑定「动态口令」。需要 GitHub 定时登录时，把绑定页提供的密钥填入 GitHub Actions 的 `UIS_TOTP_SECRET`，并妥善保管。每次生成的六位口令只供当次登录使用。
 
 ### 第 3 步：获取课程 ID
 

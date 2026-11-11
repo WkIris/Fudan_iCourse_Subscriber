@@ -25,7 +25,7 @@ from src.runtime.reporter import Reporter
 from src.runtime.scheduler import Scheduler
 from src.ai.summarizer import Summarizer
 from src.ai.transcriber import Transcriber
-from src.api.webvpn import WebVPNSession
+from src.api.webvpn import SecondFactorError, WebVPNSession
 
 
 def login_with_retry(max_attempts: int = 10) -> WebVPNSession:
@@ -46,6 +46,9 @@ def login_with_retry(max_attempts: int = 10) -> WebVPNSession:
             print("[Login] iCourse CAS...")
             vpn.authenticate_icourse()
             return vpn
+        except SecondFactorError:
+            vpn.session.close()
+            raise
         except Exception as e:
             if attempt < max_attempts - 1:
                 print(f"  Failed: {type(e).__name__}: {e}; retrying...")
@@ -138,6 +141,8 @@ def _enumerate_lectures(client: ICourseClient, db: Database,
                     lecture.get("date", ""),
                 )
                 out.append((course_id, course_title, lecture))
+        except SecondFactorError:
+            raise
         except Exception:
             reporter.course_enumeration_error(course_id)
             traceback.print_exc()
@@ -238,6 +243,8 @@ def _crawl_semester_catalog(client: ICourseClient, db: Database,
     try:
         _check_session(client)
         terms = client.discover_terms()
+    except SecondFactorError:
+        raise
     except Exception as e:
         reporter.crawl_courses_failed("discovery", e)
         return
@@ -279,6 +286,8 @@ def _crawl_semester_catalog(client: ICourseClient, db: Database,
             reporter.crawl_courses_done(
                 name, len(rows), deleted, upserted, time.time() - t0,
             )
+        except SecondFactorError:
+            raise
         except Exception as e:
             reporter.crawl_courses_failed(name, e)
             continue
