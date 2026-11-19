@@ -2,14 +2,8 @@ name: iCourse Check
 
 on:
   schedule:
-    # 北京时间 19:36
-    - cron: "36 11 * * *"
-
-    # 北京时间 21:36
-    - cron: "36 13 * * *"
-
-    # 北京时间 23:36
-    - cron: "36 15 * * *"
+    # 每天北京时间 20:36
+    - cron: "36 12 * * *"
 
   workflow_dispatch:
 
