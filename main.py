@@ -265,20 +265,13 @@ def _crawl_semester_catalog(client: ICourseClient, db: Database,
     for term_info in new_terms:
         code = term_info["code"]
         name = term_info["name"]
-        expected = term_info["count"]
         reporter.crawl_courses_start(name)
         t0 = time.time()
         try:
             _check_session(client)
-            rows = client.list_semester_courses(code)
+            rows = client.list_semester_courses(code, expected_total=term_info["count"])
             if not rows:
                 reporter.info(f"  Term {name}: API returned 0 courses, skipping.")
-                continue
-            if len(rows) < expected:
-                reporter.info(
-                    f"  Term {name}: fetched {len(rows)} of {expected} courses, "
-                    "deferring catalog update until the next run."
-                )
                 continue
             # Pass the human-readable term name (not the API code) to the
             # DB so the frontend displays "2025-20262" instead of "25".
@@ -290,9 +283,6 @@ def _crawl_semester_catalog(client: ICourseClient, db: Database,
             raise
         except Exception as e:
             reporter.crawl_courses_failed(name, e)
-            continue
-        reporter.info(f"  ({code}) → {expected} API courses, "
-                      f"{len(rows)} fetched")
 
     reporter.info("Semester catalog crawl complete.")
 

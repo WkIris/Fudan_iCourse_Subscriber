@@ -284,67 +284,70 @@ class ICourseClient:
                 continue
         return sorted(results, key=lambda x: -int(x["code"]))
 
-    def list_semester_courses(self, term: str,
-                              per_page: int = 500) -> list[dict]:
+    def list_semester_courses(self, term: str, per_page: int = 500, *,
+                              expected_total: int | None = None) -> list[dict]:
         """Walk every page of get-course-list for ``term``.
 
-        Uses ``total`` from the first response to compute the exact page
-        count — no hard-coded max.  (Caller must ensure the API hasn't
-        silently capped ``per_page`` below the requested value.)
+        If the API reports more rows than it serves, fetch the catalog again
+        with different page boundaries and require the same set of course IDs.
 
         Returns a flat list of ``{course_id, title, teacher, dept}`` dicts,
         deduped by course_id.
         """
-        import math
+        def scan(page_size: int, expected: int | None) -> tuple[dict[str, dict], int]:
+            result = self.get_course_list(term=term, page=1, per_page=page_size)
+            total = result["total"]
+            if expected is not None and total != expected:
+                raise RuntimeError(f"Catalog total changed for term {term}: {expected} to {total}")
+            page_count = (total + page_size - 1) // page_size
+            courses: dict[str, dict] = {}
 
-        out: list[dict] = []
-        seen: set[str] = set()
+            for page in range(1, page_count + 1):
+                if page > 1:
+                    result = self.get_course_list(term=term, page=page, per_page=page_size)
+                page_items = result["courses"]
+                max_rows = min(page_size, total - (page - 1) * page_size)
+                # A complete final page helps distinguish overcounts from a truncated list.
+                min_rows = max_rows if page == page_count else 1
+                if result["total"] != total or not min_rows <= len(page_items) <= max_rows:
+                    raise RuntimeError(
+                        f"Incomplete catalog for term {term}, page {page}: "
+                        f"got {len(page_items)} rows, expected {min_rows} to {max_rows} "
+                        f"(reported total {result['total']}, initially {total})"
+                    )
 
-        # Page 1 — discover total
-        result = self.get_course_list(
-            term=term, page=1, per_page=per_page,
-        )
-        total_expected = result.get("total") or 0
-        if not total_expected:
-            return out
-        total_pages = max(1, math.ceil(total_expected / per_page))
+                for raw in page_items:
+                    course_id = raw.get("id") or raw.get("course_id")
+                    if not course_id:
+                        raise RuntimeError(f"Missing course ID for term {term}, page {page}")
+                    courses.setdefault(str(course_id), raw)
 
-        def _process(page_items):
-            for raw in page_items:
-                cid = raw.get("id") or raw.get("course_id")
-                if not cid:
-                    continue
-                cid = str(cid)
-                if cid in seen:
-                    continue
-                seen.add(cid)
-                dept = (
-                    raw.get("kkxy_name") or raw.get("school_name")
-                    or raw.get("dept_name") or raw.get("kkxy") or None
+            return courses, total
+
+        courses, total = scan(per_page, expected_total)
+        if len(courses) < total:
+            check_size = max(1, per_page * 4 // 5) if per_page > 1 else 2
+            confirmed, _ = scan(check_size, total)
+            if confirmed.keys() != courses.keys():
+                raise RuntimeError(
+                    f"Incomplete catalog for term {term}: could not confirm the same "
+                    f"course IDs across page sizes {per_page} and {check_size} "
+                    f"({len(courses)} and {len(confirmed)} of {total})"
                 )
-                out.append({
-                    "course_id": cid,
-                    "title": raw.get("title") or "",
-                    "teacher": raw.get("realname") or raw.get("teacher") or "",
-                    "dept": dept,
-                })
+            courses = confirmed
+            print(f"  Term {term}: API reports {total} rows, two page sizes "
+                  f"agree on {len(courses)} course IDs.", flush=True)
 
-        page_items = result.get("courses", [])
-        if not page_items:
-            return out
-        _process(page_items)
-
-        # Remaining pages 2 .. total_pages
-        for page in range(2, total_pages + 1):
-            result = self.get_course_list(
-                term=term, page=page, per_page=per_page,
-            )
-            page_items = result.get("courses", [])
-            if not page_items:
-                break
-            _process(page_items)
-
-        return out
+        return [
+            {
+                "course_id": course_id,
+                "title": raw.get("title") or "",
+                "teacher": raw.get("realname") or raw.get("teacher") or "",
+                "dept": (raw.get("kkxy_name") or raw.get("school_name")
+                         or raw.get("dept_name") or raw.get("kkxy") or None),
+            }
+            for course_id, raw in courses.items()
+        ]
 
     def get_lecture_detail(self, course_id: str, sub_id: str) -> dict:
         """Get details for a specific lecture, including video URL info.
